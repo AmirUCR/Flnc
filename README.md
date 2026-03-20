@@ -2,9 +2,14 @@
 
 ## Introduction
 
-Flnc is software that can accurately identify full-length long noncoding RNAs (lncRNAs) from human RNA-seq data. lncRNAs are linear transcripts of more than 200 nucleotides that do not encode proteins. The most common approach for identifying lncRNAs from RNA-seq data which examines the coding abilities of assembled transcripts will result in a very high false-positive rate (30%-75%) of lncRNA identification. The falsely discovered lncRNAs lack transcriptional start sites and most of them are RNA fragments or result from transcriptional noise. Unlike the false-positive lncRNAs, true lncRNAs are full-length lncRNA transcripts that include transcriptional start sites (TSSs). To exclude these false lncRNAs, H3K4me3 chromatin immunoprecipitation sequencing (ChIP-seq) data had been used to examine transcriptional start sites of putative lncRNAs, which are transcripts without coding abilities. However, because of cost, time, and the limited availability of sample materials for generating H3K4me3 ChIP-seq data, most samples (especially clinical biospecimens) may have available RNA-seq data but lack matched H3K4me3 ChIP-seq data. This Flnc method solves the problem of lacking transcriptional initiation profiles when identifying lncRNAs. 
+Flnc is a machine-learning tool designed to accurately identify full-length long noncoding RNAs (lncRNAs) from RNA-seq data without requiring costly, matched H3K4me3 ChIP-seq data.
 
-Flnc integrates seven machine-learning algorithms built with four genomic features. Flnc achieves state-of-the-art prediction power with a AUROC score over 0.92. Flnc significantly improves the prediction accuracy from less than 50% using the common approach to over 85% on five independent datasets without requiring matched H3K4me3 ChIP-seq data. In addition to the stranded polyA-selected RNA-seq data, Flnc can also be applied to identify lncRNAs from stranded RNA-seq data of ribosomal RNA depleted samples or unstranded RNA-seq data of polyA-selected samples. 
+Traditional methods often suffer from high false-positive rates (30%–75%) because they struggle to distinguish true lncRNAs from transcriptional noise or RNA fragments that lack Transcriptional Start Sites (TSSs). Flnc solves this by integrating seven machine-learning algorithms and four genomic features to predict TSS presence.
+Key Performance & Features
+
+* High Accuracy: Increases prediction accuracy from <50% (common methods) to >85%, achieving an AUROC score above 0.92.
+* Cost-Effective: Eliminates the need for ChIP-seq data, making it ideal for clinical biospecimens where only RNA-seq is available.
+* Versatile: Compatible with stranded (polyA-selected or rRNA-depleted) and unstranded RNA-seq data.
 
 ![workflow](Picture1.png)
 
@@ -46,14 +51,20 @@ chmod 755 *.py
 
 ### Step 2: Download LIB folder from Zenodo
 ```bash
-cd /home/username/Flnc
-wget -c https://zenodo.org/record/7853855/files/LIB.zip?download=1
-unzip zenodo.org/record/7853855/files/LIB.zip\?download\=1
-rm -f zenodo.org/record/7853855/files/LIB.zip\?download\=1
+wget -c "https://zenodo.org/record/7853855/files/LIB.zip?download=1" -O LIB.zip
+unzip LIB.zip
+rm -f LIB.zip
+```
+
+### Step 3: Redirect the Singularity cache/tmp file
+```
+mkdir -p $PWD/tmp
+echo "export SINGULARITY_TMPDIR=$PWD/tmp" >> ~/.bashrc
+echo "export SINGULARITY_CACHEDIR=$PWD/tmp" >> ~/.bashrc
+source ~/.bashrc  # Apply changes to current terminal
 ```
 
 ## Running Flnc
-
 The Flnc tool has two subcommands single and pair. The single subcommand can take three types of input files: single-end RNA-seq data in FASTQ format, and transcript data either in BED format or in FASTA format. The pair subcommand can take two ends of the paired-end RNA-seq data in FASTQ format as the input.
 
 **Note:**
@@ -69,6 +80,7 @@ The Flnc tool has two subcommands single and pair. The single subcommand can tak
 **Usage** 
 ```bash
 python2 Flnc.py {pair,single} -l LIBRARY -o OUTPUT_DIR -f {fastq,fasta,bed} {-1 FILE1 -2 FILE2 | -u FILE} [optional options]
+```
 
 When running Flnc with paired RNA-seq data, it is critical that the *_1 files and the *_2 files of replicates appear in separate comma-delimited lists, and that the order of the files in the two lists is the same.
 
@@ -122,31 +134,31 @@ The sample input files are available from https://zenodo.org/record/7853855/file
 
 **Example 1: Identify lncRNAs from single-end RNA-seq data with single replicate by default parameters**
 ```bash
-python2 Flnc.py single -f fastq -u /home/username/Flnc/example/GSM3039399.fastq.gz -l /home/username/Flnc/LIB -o /home/username/Flnc/sample_output1 -s first
+python2 Flnc.py single -f fastq -u $PWD/example/GSM3039399.fastq.gz -l $PWD/LIB -o $PWD/sample_output1 -s first
 ```
 **Example 2: Identify lncRNAs with customized model**
 ```bash
-python2 Flnc.py single -f fastq -u /home/username/Flnc/example/GSM3039399.fastq.gz -l /home/username/Flnc/LIB -o /home/username/Flnc/sample_output2 -s first -m ensemble
+python2 Flnc.py single -f fastq -u $PWD/example/GSM3039399.fastq.gz -l $PWD/LIB -o $PWD/sample_output2 -s first -m ensemble
 ```
-**Example 3: Identify lncRNAs with customized gene annotation file (e.g. /home/username/Flnc/gencode.v30.gtf)**
+**Example 3: Identify lncRNAs with customized gene annotation file (e.g. $PWD/gencode.v30.gtf)**
 ```bash
-python2 Flnc.py single -f fastq -u /home/username/Flnc/example/GSM3039399.fastq.gz -l /home/username/Flnc/LIB -o /home/username/Flnc/sample_output3 -s first -g /home/username/Flnc/gencode.v30.gtf
+python2 Flnc.py single -f fastq -u $PWD/example/GSM3039399.fastq.gz -l $PWD/LIB -o $PWD/sample_output3 -s first -g $PWD/gencode.v30.gtf
 ```
 **Example 4: Identify lncRNAs from single-end RNA-seq data with three replicates by default parameters**
 ```bash
-python2 Flnc.py single -f fastq -u /home/username/Flnc/example/GSM1462975.fastq.gz, /home/username/Flnc/example/GSM1462976.fastq.gz,/home/username/Flnc/example/ GSM1462977.fastq.gz -l /home/username/Flnc/LIB -o /home/username/Flnc/sample_output4 -s first
+python2 Flnc.py single -f fastq -u $PWD/example/GSM1462975.fastq.gz, $PWD/example/GSM1462976.fastq.gz,$PWD/example/ GSM1462977.fastq.gz -l $PWD/LIB -o $PWD/sample_output4 -s first
 ```
 **Example 5: Identify lncRNAs from paired-end RNA-seq data with single replicate by default parameters**
 ```bash
-python2 Flnc.py pair -f fastq -1 /home/username/Flnc/example/GSM4193226_1.fastq.gz -2 /hom/username/Flnc/example/GSM4193226_2.fastq.gz -l /home/username/Flnc/LIB -o /home/username/Flnc/sample_output5 -s first
+python2 Flnc.py pair -f fastq -1 $PWD/example/GSM4193226_1.fastq.gz -2 $PWD/example/GSM4193226_2.fastq.gz -l $PWD/LIB -o $PWD/sample_output5 -s first
 ```
 **Example 6: Evaluate if or not the input transcripts (in FASTA format) are true lncRNAs**
 ```bash
-python2 Flnc.py single -f fasta -u /home/username/Flnc/example/Test.fa -l /home/username/Flnc/LIB -o /home/username/Flnc/sample_output6
+python2 Flnc.py single -f fasta -u $PWD/example/Test.fa -l $PWD/LIB -o $PWD/sample_output6
 ```
 **Example 7: Evaluate if or not the input transcripts (in BED format) are true lncRNAs**
 ```bash
-python2 Flnc.py single -f bed -u /home/username/Flnc/example/Test.bed -l /home/username/Flnc/LIB -o /home/username/Flnc/sample_output7
+python2 Flnc.py single -f bed -u $PWD/example/Test.bed -l $PWD/LIB -o $PWD/sample_output7
 ```
 
 ## Recommendations for the model options
