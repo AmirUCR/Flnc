@@ -3,3 +3,5 @@ LIB.zip
 example.zip
 example
 .DS_Store
+tmp/
+output/
